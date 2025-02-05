@@ -1,9 +1,11 @@
+use std::env;
 use std::fs::File;
 use std::error::Error;
 use std::io::{self, BufRead};
 pub struct Config {
     pub pattern: String,
-    pub file_path: String
+    pub file_path: String,
+    pub case_sensitive: bool,
 }
 
 impl Config {
@@ -14,23 +16,28 @@ impl Config {
 
         let pattern = args[1].clone();
         let file_path = args[2].clone();
+        let case_sensitive = !env::var("IGNORE_CASE").is_ok();
         
-        return Ok(Config{pattern, file_path});
+        Ok(Config{pattern, file_path, case_sensitive})
     }
 }
 
-pub fn grep(pattern: &String, file_path: &String) -> Result<String, Box<dyn Error>>{
+pub fn grep(Config {pattern, file_path, case_sensitive}: Config) -> Result<String, Box<dyn Error>>{
 
-    println!("pattern: {pattern}, file_path: {file_path}");
+    println!("pattern: {}, file_path: {}", pattern, file_path);
+    let mut pattern = pattern;
+    if case_sensitive == false {
+        pattern = pattern.to_lowercase();
+    }
 
-    let file = File::open(file_path)?;
+    let file = File::open(&file_path)?;
     let reader = io::BufReader::new(file);
 
     let mut res = String::new();
     let mut cnt = 1;
     for line in reader.lines() {
         let line = line?;
-        if line.contains(pattern) {
+        if case_sensitive && line.contains(&pattern) || !case_sensitive && line.to_lowercase().contains(&pattern) {
             res += &format!("line {cnt}: {line}\n");
         }
         cnt += 1;
@@ -47,7 +54,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn should_find_pattern() {
+    fn case_sensitive() {
         let pattern = String::from("mypat");
         let text = &format!("Lorem ipsum dolor sit amet, consectetur adipiscing elit.\nPhasellus venenatis quam sed lacus ultrices, non ultrices tortor dapibus.\nNunc congue, ex.\net sollicitudin lobortis {pattern}\nNulla quis felis sit amet sem blandit rhoncus\nelit nisi finibus{pattern} arcu,\n Nulla quis felis sit amet sem blandit rhoncus\nNulla facilisi. Suspendisse dictum a diam ut rhoncus.\n");
         let correct = &format!("line 4: et sollicitudin lobortis {pattern}\nline 6: elit nisi finibus{pattern} arcu,\n");
@@ -55,7 +62,24 @@ mod tests {
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(temp_file, "{text}").unwrap(); 
         let file_path = temp_file.path().to_string_lossy().into_owned();
-        let result = grep(&pattern, &file_path).unwrap();
+
+        let result = grep(Config{pattern, file_path, case_sensitive:true}).unwrap();
+        assert!(result.as_str() == correct);
+    }
+
+    #[test]
+    fn case_insensitive() {
+        let pattern = String::from("lo");
+        let text = &format!("Lorem ipsum dolor sit amet, consectetur adipiscing elit.\nPhasellus venenatis \nLos Angeles\nquam sed lacus ultrices, non ultrices tortor dapibus.\nNunc congue, ex.\net sollicitudin lobortis {pattern}\nNulla quis felis sit amet sem blandit rhoncus\nelit nisi finibus{pattern} arcu,\n Nulla quis felis sit amet sem blandit rhoncus\nNulla facilisi. Suspendisse dictum a diam ut rhoncus.\n");
+        let correct = &format!("line 1: Lorem ipsum dolor sit amet, consectetur adipiscing elit.\nline 3: Los Angeles\nline 6: et sollicitudin lobortis lo\nline 8: elit nisi finibuslo arcu,\n");
+        
+        let mut temp_file = NamedTempFile::new().unwrap();
+        writeln!(temp_file, "{text}").unwrap(); 
+        let file_path = temp_file.path().to_string_lossy().into_owned();
+
+        let result = grep(Config{pattern, file_path, case_sensitive:false}).unwrap();
+        println!("{result}");
+        println!("{correct}");
         assert!(result.as_str() == correct);
     }
 
@@ -75,8 +99,8 @@ mod tests {
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(temp_file, "{text}").unwrap(); 
         let file_path = temp_file.path().to_string_lossy().into_owned();
-        let result = grep(&pattern, &file_path).unwrap();
 
+        let result = grep(Config{pattern, file_path, case_sensitive:false}).unwrap();
         assert!(result.as_str() == correct);
     }
 }
