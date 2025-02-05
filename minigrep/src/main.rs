@@ -1,12 +1,17 @@
 use std::env;
 use std::error::Error;
+use std::process;
 
-use minigrep::grep;
+use minigrep::Config;
+
 fn main() -> Result<(), Box<dyn Error>> {
-    let pattern = env::args().nth(1).expect("Missing 1st argument!");
-    let file_path = env::args().nth(2).expect("Missing 2nd argument!");
+    let args: Vec<String> = env::args().collect();
+    let config = Config::build(&args).unwrap_or_else(|err|{
+        println!("Problem parsing arguments: {err}");
+        process::exit(1);
+    });
 
-    let result = grep(&pattern, &file_path).unwrap();
+    let result = minigrep::grep(&config.pattern, &config.file_path).unwrap();
     print!("{result}");
     
     Ok(())

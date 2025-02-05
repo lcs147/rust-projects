@@ -1,6 +1,23 @@
 use std::fs::File;
 use std::error::Error;
 use std::io::{self, BufRead};
+pub struct Config {
+    pub pattern: String,
+    pub file_path: String
+}
+
+impl Config {
+    pub fn build(args: &Vec<String>) -> Result<Config, &str> {
+        if args.len() < 3 {
+            return Err("less than 2 arguments in the command line");
+        }
+
+        let pattern = args[1].clone();
+        let file_path = args[2].clone();
+        
+        return Ok(Config{pattern, file_path});
+    }
+}
 
 pub fn grep(pattern: &String, file_path: &String) -> Result<String, Box<dyn Error>>{
 
