@@ -56,7 +56,7 @@ mod tests {
     #[test]
     fn case_sensitive() {
         let pattern = String::from("mypat");
-        let text = &format!("Lorem ipsum dolor sit amet, consectetur adipiscing elit.\nPhasellus venenatis quam sed lacus ultrices, non ultrices tortor dapibus.\nNunc congue, ex.\net sollicitudin lobortis {pattern}\nNulla quis felis sit amet sem blandit rhoncus\nelit nisi finibus{pattern} arcu,\n Nulla quis felis sit amet sem blandit rhoncus\nNulla facilisi. Suspendisse dictum a diam ut rhoncus.\n");
+        let text = &format!("Lorem ipsum dolor sit amet, consectetur adipiscing elitMYPAT.\nPhasellus venenatis quam sed lacus ultrices, non ultrices tortor dapibus.\nNunc congue, ex.\net sollicitudin lobortis {pattern}\nNulla quis felis sit amet sem blandit rhoncus\nelit nisi finibus{pattern} arcu,\n Nulla quis felis sit amet sem blandit rhoncus\nNulla facilisi. Suspendisse dictum a diam ut rhoncus.\n");
         let correct = &format!("line 4: et sollicitudin lobortis {pattern}\nline 6: elit nisi finibus{pattern} arcu,\n");
         
         let mut temp_file = NamedTempFile::new().unwrap();
